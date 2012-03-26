@@ -1,18 +1,20 @@
 package com.tictactoe.core;
 
+import com.tictactoe.core.Game.IUserType;
+
 
 public class User {
-	private final Board.UserType userType; // O or X
+	private final IUserType userType; // O or X
 	
-	public User(Board.UserType type) {
+	public User(IUserType type) {
 		this.userType = type;
 	}
 	
 	public void put(Board board, int movekey) {
-		board.put(movekey, this.userType);
+		board.put(this.userType, movekey);
 	}
 	
-	public Board.UserType getUserType() {
+	public IUserType getUserType() {
 		return this.userType;
 	}
 }

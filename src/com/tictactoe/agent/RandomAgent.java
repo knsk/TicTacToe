@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 
 import com.tictactoe.core.Board;
+import com.tictactoe.core.Game.IUserType;
 
 public class RandomAgent extends AbstractAgent {
 	
@@ -15,9 +16,10 @@ public class RandomAgent extends AbstractAgent {
 	 * @param board current state of the board
 	 * @return the movekey decided 
 	 */
+	@Override
 	public int selectNextMove(Board board) {
 		// Analyze the state of the board and decide the next move
-		Board.UserType[][] matrix = board.getMatrix();
+		IUserType[][] matrix = board.getMatrix();
 		// Create a list of available move keys
 		List<Integer> availableMovekeyList = new ArrayList<Integer>();
 		int movekey = 1;

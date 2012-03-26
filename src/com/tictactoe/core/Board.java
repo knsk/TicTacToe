@@ -1,30 +1,46 @@
 package com.tictactoe.core;
 
+import com.tictactoe.core.Game.IUserType;
+import com.tictactoe.util.BoardUtil;
+
 public class Board {
 	private final int size;
-	public enum UserType {O, X};
-	private UserType[][] matrix;
+	private IUserType[][] matrix;
+	private BoardIndex boardIndex = null;
 	
 	public Board(int size) {
 		if (size <= 0) { // Board size needs to be non-zero positive integer
 			throw new IllegalArgumentException();
 		}
 		this.size = size;
-		this.matrix = new UserType[size][size];
+		this.matrix = new IUserType[size][size];
 	}
 	
 	/**
 	 * Put O or X to specified place on the board
 	 */
-	public void put(int movekey, UserType userType) {
+	public void put(IUserType userType, int movekey) {
 		// Range check the move key with the board size
 		if (!isValidMovekey(movekey)) {
+			System.err.println("Invalid movekey: " + movekey);
+			throw new IllegalArgumentException();
+		}
+		if (!isAvailable(movekey)) {
+			System.err.println("Already placed movekey: " + movekey);
 			throw new IllegalArgumentException();
 		}
 		// Compute the array indices from move key
-		int[] indices = computeIndicesFromMovekey(movekey);
+		int[] indices = BoardUtil.computeIndicesFromMovekey(movekey, getSize());
 		// Put the move on the board
-		this.matrix[indices[0]][indices[1]] = userType;
+		this.matrix[indices[0]][indices[1]] = userType;	
+	}
+	
+	public BoardIndex getBoardIndex() {
+		return this.boardIndex;
+	}
+	
+	public void setBoardIndex(BoardIndex boardIndex) {
+		this.boardIndex = boardIndex;
 	}
 	
 	/**
@@ -33,7 +49,7 @@ public class Board {
 	 * @return         if the move key is valid in the board size
 	 */
 	public boolean isValidMovekey(int movekey) {
-		if (movekey < 1 || movekey > this.size*this.size) {
+		if (movekey < 1 || movekey > getSize()*getSize()) {
 			return false;
 		} else {
 			return true;
@@ -44,25 +60,12 @@ public class Board {
 	 * Check the availability of the move key position on the board
 	 */
 	public boolean isAvailable(int movekey) {
-		int[] indices = computeIndicesFromMovekey(movekey);
+		int[] indices = BoardUtil.computeIndicesFromMovekey(movekey, this.size);
 		if (this.matrix[indices[0]][indices[1]] == null) {
 			return true;
 		} else {
 			return false;
 		}
-	}
-	
-	/**
-	 * Compute the corresponding indices of the matrix from the move key
-	 * @param movekey
-	 * @return matrix indices array in 0th and 1st elements
-	 */
-	private int[] computeIndicesFromMovekey(int movekey) {
-		int x = (int) Math.floor((movekey - 1) / this.size);
-		int y = (movekey - 1) % this.size;
-		// System.out.println("movekey: " + movekey + " = " + "(" + x + "," + y + ")");
-		int[] indices = {x, y};	
-		return indices;
 	}
 	
 	/**
@@ -72,72 +75,76 @@ public class Board {
 	 * @param prevmove  previous move key
 	 * @return          if the game is over
 	 */
-	public boolean isGameOver(UserType userType, int prevmove) {
-		int[] indices = computeIndicesFromMovekey(prevmove);
-		boolean gameover = true;
-		// 1) Check horizontal line
-		for (int y = 0; y < this.size; y++) {
-			if (this.matrix[indices[0]][y] != userType) {
-				gameover = false;
+	public boolean isGameOver(IUserType userType, int prevmove) {
+		// Check game over depending on the place of the move
+		if (prevmove == BoardUtil.getCenterMovekey(getSize())) { // (1) Center point
+			// 1) Check horizontal line
+			if (BoardUtil.getHorizontalCount(getMatrix(), userType, prevmove) == getSize()) {
+				return true;
 			}
-		}
-		if (gameover) return true;
-		
-		// 2) Check vertical line
-		gameover = true;
-		for (int x = 0; x < this.size; x++) {
-			if (this.matrix[x][indices[1]] != userType) {
-				gameover = false;
+			// 2) Check vertical line
+			if (BoardUtil.getVericalCount(getMatrix(), userType, prevmove) == getSize()) {
+				return true;
 			}
-		}
-		if (gameover) return true;
-		
-		// 3) Check diagonal if the previous move is on a diagonal line
-		gameover = true;
-		if ((this.size % 2 == 1) && (indices[0] == indices[1]) && (indices[0] == (this.size - 1) / 2)) { // Center point
-			for (int i = 0; i < this.size; i++) { 
-				if (this.matrix[i][i] != userType) { // Left top to right bottom
-					gameover = false;
-				}
+			// 3) Check Left top to right bottom diagonal line
+			if (BoardUtil.getRightDownDiagonalCount(getMatrix(), userType) == getSize()) {
+				return true;
 			}
-			if (gameover) return true;
-			gameover = true;
-			for (int i = 0; i < this.size; i++) {
-				if (this.matrix[i][this.size - 1 - i] != userType) { // Right top to left bottom
-					gameover = false;
-				}
+			// 4) Check Left bottom to right top diagonal line
+			if (BoardUtil.getRightUpDiagonalCount(getMatrix(), userType) == getSize()) {
+				return true;
 			}
-			if (gameover) return true;
-		} else if (indices[0] == indices[1]) { // on a left top to right bottom diagonal line
-			for (int i = 0; i < this.size; i++) { 
-				if (this.matrix[i][i] != userType) { // Left top to right bottom
-					gameover = false;
-				}
+			return false;
+		} else if (BoardUtil.isRightDownDiagonalMovekey(prevmove, getSize())) { // (2) Left top to right bottom diagonal line
+			// 1) Check horizontal line
+			if (BoardUtil.getHorizontalCount(getMatrix(), userType, prevmove) == getSize()) {
+				return true;
 			}
-			if (gameover) return true;
-		} else if ((indices[0] + indices[1]) == (this.size - 1)) { // on a right top to left bottom diagonal line
-			for (int i = 0; i < this.size; i++) {
-				if (this.matrix[i][this.size - 1 - i] != userType) { // Right top to left bottom
-					gameover = false;
-				}
+			// 2) Check vertical line
+			if (BoardUtil.getVericalCount(getMatrix(), userType, prevmove) == getSize()) {
+				return true;
 			}
-			if (gameover) return true;
-		} else {
+			// 3) Check Left top to right bottom diagonal line
+			if (BoardUtil.getRightDownDiagonalCount(getMatrix(), userType) == getSize()) {
+				return true;
+			}
+			return false;
+		} else if (BoardUtil.isRightUpDiagonalMovekey(prevmove, getSize())) { // (3) Left bottom to right top diagonal line
+			// 1) Check horizontal line
+			if (BoardUtil.getHorizontalCount(getMatrix(), userType, prevmove) == getSize()) {
+				return true;
+			}
+			// 2) Check vertical line
+			if (BoardUtil.getVericalCount(getMatrix(), userType, prevmove) == getSize()) {
+				return true;
+			}
+			// 3) Check Left bottom to right top diagonal line
+			if (BoardUtil.getRightUpDiagonalCount(getMatrix(), userType) == getSize()) {
+				return true;
+			}
+			return false;
+		} else { // (4) On the side
+			// 1) Check horizontal line
+			if (BoardUtil.getHorizontalCount(getMatrix(), userType, prevmove) == getSize()) {
+				return true;
+			}
+			// 2) Check vertical line
+			if (BoardUtil.getVericalCount(getMatrix(), userType, prevmove) == getSize()) {
+				return true;
+			}
 			return false;
 		}
-		
-		return gameover;
 	}
 	
 	public int getSize() {
 		return this.size;
 	}
 	
-	public UserType[][] getMatrix() {
+	public IUserType[][] getMatrix() {
 		// Deep copy the matrix
-		UserType[][] matrix = new UserType[this.size][this.size];
-		for (int i = 0; i < this.size; i++) {
-			for (int j = 0; j < this.size; j++) {
+		IUserType[][] matrix = new IUserType[getSize()][getSize()];
+		for (int i = 0; i < getSize(); i++) {
+			for (int j = 0; j < getSize(); j++) {
 				matrix[i][j] = this.matrix[i][j];
 			}
 		}
@@ -152,12 +159,12 @@ public class Board {
 	*/
 	public String getStrBoardState() {
 		StringBuilder strBoardState = new StringBuilder("Board: " + System.getProperty("line.separator"));
-		for (int i = 0; i < this.size; i++) {
-			for (int j = 0; j < this.size; j++) {
-				if (matrix[i][j] == UserType.O) {
-					strBoardState.append("O|");
-				} else if (matrix[i][j] == UserType.X) {
-					strBoardState.append("X|");
+		for (int i = 0; i < getSize(); i++) {
+			for (int j = 0; j < getSize(); j++) {
+				if (matrix[i][j] == Game.getUserUserType()) {
+					strBoardState.append(Game.getUserUserType() + "|");
+				} else if (matrix[i][j] == Game.getAgentUserType()) {
+					strBoardState.append(Game.getAgentUserType() + "|");
 				} else {
 					strBoardState.append(" |");
 				}
@@ -175,8 +182,8 @@ public class Board {
 	public String getStrMovekeyMatrix() {
 		StringBuilder strMovekeyMatrix = new StringBuilder("Move key: " + System.getProperty("line.separator"));
 		int movekey = 1;
-		for (int i = 0; i < this.size; i++) {
-			for (int j = 0; j < this.size; j++) {
+		for (int i = 0; i < getSize(); i++) {
+			for (int j = 0; j < getSize(); j++) {
 				strMovekeyMatrix.append(movekey++ + "|");
 			}
 			strMovekeyMatrix.append(System.getProperty("line.separator"));

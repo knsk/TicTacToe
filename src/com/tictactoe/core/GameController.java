@@ -3,88 +3,77 @@ package com.tictactoe.core;
 import java.util.Scanner;
 import org.apache.commons.lang3.StringUtils;
 
-import com.tictactoe.agent.AgentFactory;
-import com.tictactoe.agent.IAgent;
-
 public class GameController {
-
 	public static void main(String args[]) {
-		final int boardsize = 3;
-		Board board = new Board(boardsize);
-		User user = new User(Board.UserType.O);
-		User agentUser = new User(Board.UserType.X);
-		IAgent agent = AgentFactory.createAgent(AgentFactory.AgentType.RANDOM);
-		
+		Game game = new Game();
 		// Game start
-		System.out.println("Welecome to Tic-Tac-Toe ...");
-		System.out.println(board.getStrBoardState());
-		System.out.println(board.getStrMovekeyMatrix());
+		System.out.println(game.getWelcomeMessage());
+		System.out.println(game.getStrBoardState());
+		System.out.println(game.getStrMovekeyMatrix());
+		
 		boolean gameover = false;
 		// Continue the game until game is over
-		int movecount = 0;
 		while (!gameover) {
 			// 1) Wait for the user's input and put the user's selected move
 	        int movekey = getMovekeyFromInput();
 	        // Check the validity of the move key on the board
-	        while (!board.isValidMovekey(movekey)) {
+	        while (!game.isValidMovekey(movekey)) {
 	        	System.out.println("The move key is invalid because it's out of the range. Please input the valid move key.");
 				// Wait for the next input
 		        movekey = getMovekeyFromInput();
 	        }
 	        // Check the availability of the move key on the board
-	        while (!board.isAvailable(movekey)) {
+	        while (!game.isAvailable(movekey)) {
 				System.out.println("You cannot put on that position because it's already taken. Please input the available move key.");
 				// Wait for the next input
 		        movekey = getMovekeyFromInput();
 		        // Check the validity of the move key on the board again
-		        while (!board.isValidMovekey(movekey)) {
+		        while (!game.isValidMovekey(movekey)) {
 		        	System.out.println("The move key is invalid because it's out of the range. Please input the valid move key.");
 					// Wait for the next input
 			        movekey = getMovekeyFromInput();
 		        }
-			} 
-			user.put(board, movekey);
-			movecount++;
+			}
+	        game.put(Game.getUserUserType(), movekey);
 				
 			// 2) Check if the user won the game or draw
-			gameover = board.isGameOver(user.getUserType(), movekey);
+			gameover = game.isGameOver(Game.getUserUserType());
 			if (gameover) {
 				System.out.println("You won");
 				break;
 			}
-			if (!moreMovePossible(movecount, boardsize)) {
+			if (!moreMovePossible(game.getMoveCount(), game.getBoardSize())) {
 				System.out.println("Draw");
 				break;
 			}
 			
 			// Print the state of the board and move key matrix
-			System.out.println(board.getStrBoardState());
+			System.out.println(game.getStrBoardState());
 			// System.out.println(board.getStrMovekeyMatrix());
 			
 			// 3) Agent user considers next move and put the decided move
-			int nextmove = agent.selectNextMove(board);
-			agentUser.put(board, nextmove);
+			int nextmove =game.getAgentMove();
+			game.put(Game.getAgentUserType(), nextmove);
 			System.out.println("Agent's move: " + nextmove);
-			movecount++;
 			
 			// Print the state of the board and move key matrix
-			System.out.println(board.getStrBoardState());
-			System.out.println(board.getStrMovekeyMatrix());
+			System.out.println(game.getStrBoardState());
+			System.out.println(game.getStrMovekeyMatrix());
 			
 			// 4) Check if the agent won the game or draw
-			gameover = board.isGameOver(agentUser.getUserType(), nextmove);
+			gameover = game.isGameOver(Game.getAgentUserType());
 			if (gameover) {
 				System.out.println("I won");
 				break;
 			}
-			if (!moreMovePossible(movecount, boardsize)) {
+			if (!moreMovePossible(game.getMoveCount(), game.getBoardSize())) {
 				System.out.println("Draw");
 				break;
 			}
 		}
 		
 		// Print the final state of the board
-		System.out.println(board.getStrBoardState());
+		System.out.println(game.getStrBoardState());
 		
 	}
 	
