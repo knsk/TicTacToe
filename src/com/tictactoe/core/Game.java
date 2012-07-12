@@ -69,7 +69,7 @@ public class Game {
 		BoardIndex boardIndex = new BoardIndex(typeUserMap);
 		this.board.setBoardIndex(boardIndex);
 		this.randomAgent = AgentFactory.createAgent(AgentType.RANDOM);
-		this.rationalAgent = AgentFactory.createAgent(AgentType.PERFECT);
+		this.rationalAgent = AgentFactory.createAgent(AgentType.RATIONAL);
 	}
 	
 	public void put(IUserType userType, int movekey) {
